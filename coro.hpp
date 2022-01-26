@@ -33,8 +33,8 @@ namespace coro {
 
         static thread_local Coro *m_current;
 
-        static void wrap2(Coro *g);
-        void wrap();
+        static void wrap(Coro *g);
+        void call();
         void bind();
     public:
         Coro(std::function<void()>&& func);

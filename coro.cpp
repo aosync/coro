@@ -8,22 +8,22 @@ namespace coro {
         return msg;
     }
     thread_local Coro *Coro::m_current = nullptr;
-    void Coro::wrap() {
+    void Coro::call() {
         try {
             m_func();
         } catch (std::exception &e) {
             
         }
     }
-    void Coro::wrap2(Coro *g) {
-        std::invoke(&Coro::wrap, g);
+    void Coro::wrap(Coro *g) {
+        std::invoke(&Coro::call, g);
     }
     void Coro::bind() {
         if (Coro::m_current == this)
             throw CoroException("coro: cannot rebind a running coroutine");
         m_active = false;
 
-        ctx_link_to(&m_ctx, m_stack.end_aligned(8), (void (*)(void*))wrap2, this);
+        ctx_link_to(&m_ctx, m_stack.end_aligned(8), (void (*)(void*))wrap, this);
     }
     Coro::Coro(std::function<void()>&& func) : m_stack(8), m_func(std::move(func)) {
         bind();
