@@ -19,10 +19,6 @@ namespace coro {
         std::invoke(&Coro::call, g);
     }
     void Coro::bind() {
-        if (m_running)
-            throw CoroException("coro: cannot rebind a running coroutine");
-        m_active = false;
-
         ctx_link_to(&m_ctx, m_stack.end_aligned(8), (void (*)(void*))wrap, this);
     }
     Coro::Coro(std::function<void()>&& func) : m_stack(8), m_func(std::move(func)) {
@@ -39,6 +35,8 @@ namespace coro {
     void Coro::resume() {
         if (m_running)
             return;
+        
+        Coro *prev = Coro::m_current;
         m_active = true;
 
         m_status = REBIND;
@@ -46,11 +44,13 @@ namespace coro {
         m_running = true;
         Coro::m_current = this;
         ctx_switch(&link, &m_ctx);
-        Coro::m_current = nullptr;
+        Coro::m_current = prev;
         m_running = false;
 
-        if (m_status == REBIND)
+        if (m_status == REBIND) {
+            m_active = false;
             bind();
+        }
     }
     void Coro::yield() {
         if (!Coro::m_current)
