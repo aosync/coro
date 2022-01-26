@@ -19,7 +19,7 @@ namespace coro {
         std::invoke(&Coro::call, g);
     }
     void Coro::bind() {
-        if (Coro::m_current == this)
+        if (m_running)
             throw CoroException("coro: cannot rebind a running coroutine");
         m_active = false;
 
