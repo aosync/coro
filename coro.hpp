@@ -28,7 +28,7 @@ namespace coro {
         bool m_running = false;
         Stack m_stack;
         std::function<void()> m_func;
-        ctx m_ctx;
+        ctx *m_ctx, *m_link;
         CoroStatus m_status;
 
         static thread_local Coro *m_current;
@@ -38,6 +38,7 @@ namespace coro {
         void bind();
     public:
         Coro(std::function<void()>&& func);
+        ~Coro();
         void rebind(std::function<void()>&& func);
         void resume();
         void yield();

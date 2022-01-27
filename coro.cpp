@@ -19,10 +19,23 @@ namespace coro {
         std::invoke(&Coro::call, g);
     }
     void Coro::bind() {
-        ctx_link_to(&m_ctx, m_stack.end_aligned(8), (void (*)(void*))wrap, this);
+        ctx_link_to(m_ctx, m_stack.end_aligned(8), (void (*)(void*))wrap, this);
     }
     Coro::Coro(std::function<void()>&& func) : m_stack(8), m_func(std::move(func)) {
+        m_link = ctx_create();
+        if (m_link == nullptr)
+            throw CoroException("coro: link context allocation failed");
+        m_ctx = ctx_create();
+        if (m_ctx == nullptr) {
+            ctx_destroy(m_link);
+            throw CoroException("coro: context allocation failed");
+        }
+
         bind();
+    }
+    Coro::~Coro() {
+        ctx_destroy(m_ctx);
+        ctx_destroy(m_link);
     }
     void Coro::rebind(std::function<void()>&& func) {
         if (m_active)
@@ -40,10 +53,9 @@ namespace coro {
         m_active = true;
 
         m_status = REBIND;
-        ctx link;
         m_running = true;
         Coro::m_current = this;
-        ctx_switch(&link, &m_ctx);
+        ctx_switch(m_link, m_ctx);
         Coro::m_current = prev;
         m_running = false;
 
@@ -57,7 +69,7 @@ namespace coro {
             throw CoroException("coro: cannot yield: not in a coroutine context");
 
         m_status = LAISSEZ;
-        ctx_switch(&m_ctx, m_ctx.returnback);
+        ctx_switch(m_ctx, m_link);
     }
 
     Coro *Coro::current() {
