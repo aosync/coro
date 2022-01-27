@@ -15,7 +15,7 @@ coro_src = [
 ]
 
 coro_inc = include_directories('.')
-coro_lib = static_library('coro', coro_src, include_directories : coro_inc, dependencies : ctx_dep)
+coro_lib = static_library('coro', coro_src, include_directories : coro_inc, dependencies : ctx_dep, override_options : ['cpp_std=c++17'])
 coro_dep = declare_dependency(link_with : coro_lib, include_directories : coro_inc, dependencies : ctx_dep)
 
 subdir('test')
