@@ -1,6 +1,6 @@
 #include "stack.hpp"
 
-#ifdef __WIN32
+#ifdef _WIN32
 #include <windows.h>
 #else
 #include <sys/mman.h>
@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 static size_t get_pages_to_length(size_t pages) {
-#ifdef __WIN32
+#ifdef _WIN32
     SYSTEM_INFO si;
     GetSystemInfo(&si);
     return si.dwPageSize * pages;
@@ -23,7 +23,7 @@ static size_t get_pages_to_length(size_t pages) {
 namespace coro {
     Stack::Stack(size_t pages) : m_pages(pages) {
         m_length = get_pages_to_length(m_pages);
-#ifdef __WIN32
+#ifdef _WIN32
         m_start = new char[m_length];
 #else
         m_start = (char*)mmap(NULL, m_length, PROT_READ|PROT_WRITE, MAP_ANON|MAP_PRIVATE|MAP_STACK, -1, 0);
@@ -35,7 +35,7 @@ namespace coro {
         if (!m_start)
             return;
 
-#ifdef __WIN32
+#ifdef _WIN32
         delete[] m_start;
 #else
         munmap(m_start, m_length);
