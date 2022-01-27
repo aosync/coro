@@ -19,7 +19,11 @@ namespace coro {
         std::invoke(&Coro::call, g);
     }
     void Coro::bind() {
-        ctx_link_to(m_ctx, m_stack.end_aligned(8), (void (*)(void*))wrap, this);
+        struct ctx_stackd stackd;
+        stackd.stack_addr[CTX_STACK_HIGH] = m_stack.end();
+        stackd.stack_addr[CTX_STACK_LOW] = m_stack.start();
+        stackd.stack_addr[CTX_STACK_GUARD] = m_stack.start();
+        ctx_link_to(m_ctx, &stackd, (void (*)(void*))wrap, this);
     }
     Coro::Coro(std::function<void()>&& func) : m_stack(8), m_func(std::move(func)) {
         m_link = ctx_create();
