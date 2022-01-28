@@ -14,6 +14,7 @@ namespace coro {
         } catch (std::exception &e) {
             
         }
+        ctx_switch(m_ctx, m_returnback);
     }
     void Coro::wrap(Coro *g) {
         std::invoke(&Coro::call, g);
@@ -54,14 +55,24 @@ namespace coro {
             return;
         
         Coro *prev = Coro::m_current;
+        if (prev) {
+	        prev->m_running = false;
+	        m_returnback = prev->m_ctx;
+        } else {
+	        m_returnback = m_link;
+        }
+
         m_active = true;
 
         m_status = REBIND;
         m_running = true;
         Coro::m_current = this;
-        ctx_switch(m_link, m_ctx);
+        ctx_switch(m_returnback, m_ctx);
         Coro::m_current = prev;
         m_running = false;
+
+        if (Coro::m_current)
+	        Coro::m_current->m_running = true;
 
         if (m_status == REBIND) {
             m_active = false;
@@ -73,7 +84,7 @@ namespace coro {
             throw CoroException("coro: cannot yield: not in a coroutine context");
 
         m_status = LAISSEZ;
-        ctx_switch(m_ctx, m_link);
+        ctx_switch(m_ctx, m_returnback);
     }
 
     Coro *Coro::current() {
